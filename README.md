@@ -4,9 +4,8 @@ This repository is lifted and adapted from the
 [WildFly Micrometer quickstart](https://github.com/wildfly/quickstart/tree/main/micrometer).
 We use it to define a simple application with Micrometer integration.
 
-Its purpose is to demonstrate a very reduced example where 
-[client-side percentiles](https://docs.micrometer.io/micrometer/reference/concepts/histogram-quantiles.html)
-don't work.
+Its purpose is to demonstrate a very reduced example where several metrics are
+wrongfully reported as zero.
 
 # Description
 
@@ -14,8 +13,7 @@ Components:
 
 - `wildfly-histogram-test`: a tiny application that contains only one resource,
   similar to the Micrometer quickstart (but simplified).  It registers a summary
-  meter, where we record all the numbers that are requested.  This meter is
-  configured to have client-side percentiles.
+  meter, where we record all the numbers that are requested.
 
 - `init-and-deploy.sh`: a script that configures the Micrometer extension,
   builds the application and deploys it.
@@ -34,7 +32,7 @@ Components:
 
 - Docker
 
-- WildFly 29.0.1.Final with `JBOSS_HOME` configured appropriately.
+- WildFly 32.0.2.Final with `JBOSS_HOME` configured appropriately.
 
 # Steps
 
@@ -73,5 +71,10 @@ Components:
      curl http://localhost:8080/wildfly-histogram-test/prime/2701
      ```
 
-Check the logs: you should see errors related to the class definition of
-`HdrHistogram` not being found.
+5.   Check the Undertow metrics:
+
+     ```bash
+     curl http://localhost:1234/metrics | grep undertow
+     ```
+
+Notice that all of the metrics are reported as 0.
