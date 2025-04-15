@@ -5,7 +5,7 @@ This repository is lifted and adapted from the
 We use it to define a simple application with Micrometer integration.
 
 Its purpose is to demonstrate a very reduced example where several metrics are
-wrongfully reported as zero.
+wrongfully reported as zero when the RBAC access control provider is used.
 
 # Description
 
@@ -32,17 +32,24 @@ Components:
 
 - Docker
 
-- WildFly 32.0.2.Final with `JBOSS_HOME` configured appropriately.
+- WildFly 36.0.0.Final with `JBOSS_HOME` configured appropriately, and with
+  standard configuration.
 
 # Steps
 
-1.   Run WildFly in standalone mode with default configuration:
+1.   Enable statistics globally:
+
+     ```bash
+     export JAVA_OPTS="-Dwildfly.statistics-enabled=true"
+     ```
+
+2.   Run WildFly in standalone mode with default configuration:
 
      ```bash
      standalone.sh
      ```
 
-2.   Run the OpenTelemetry Collector container:
+3.   Run the OpenTelemetry Collector container:
 
      ```bash
      docker run -d \
@@ -56,13 +63,13 @@ Components:
          otel/opentelemetry-collector:0.89.0 --config=/etc/otel-collector-config.yaml
      ```
      
-3.   Run the init and deployment script:
+4.   Run the init and deployment script:
 
      ```bash
      ./init-and-deploy.sh
      ```
 
-4.   Send it some requests:
+5.   Send it some requests:
 
      ```bash
      curl http://localhost:8080/wildfly-histogram-test/prime/1
@@ -71,10 +78,18 @@ Components:
      curl http://localhost:8080/wildfly-histogram-test/prime/2701
      ```
 
-5.   Check the Undertow metrics:
+6.   Check the Undertow request count metric:
 
      ```bash
-     curl http://localhost:1234/metrics | grep undertow
+     curl http://localhost:1234/metrics | grep undertow_request_count_total
      ```
 
-Notice that all of the metrics are reported as 0.
+     If all went well, this should be 4.
+
+7.   Switch to RBAC access control:
+
+     ```bash
+     jboss-cli.sh -c '/core-service=management/access=authorization:write-attribute(name="provider",value="rbac")','reload'
+     ```
+
+8.   Repeat 5 and 6.  Notice now that the reported metrics are 0.
